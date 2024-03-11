@@ -40,39 +40,41 @@ def write_file(url):
 
 # Parsage dans un fichier existant
 def read_file(file: str):
+
+    data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
+            "number_available": [], "product_description": [], "category": [], "review_rating": [], "image_url": []}
+    
     print('## -- Lecture du fichier en cours... -- ##')
     with open(file, "r") as f:
         f_content = f.read()
 
     soup = BeautifulSoup(f_content, 'html5lib')
     print('## -- Extraction des données... -- ##')
-    '''
-    Éxtraction des données & Écriture dans un fichier csv
 
-    data_title_to_append = []
+    #Éxtraction des données à l'intérieur du dico à l'emplacement
+
     l_titre = soup.find_all('h3')
-    for title in l_titre:
-        data_title_to_append.append(title.text)
+    for t in l_titre:
+        data['title'].append(t.text)
 
-    for data in data_title_to_append:
-        print(data)
-    '''
+    for d in data['title']:
+        print(d)
 
-    data_cate_to_append = []
+
     side_cate = soup.find("div", class_="side_categories")
     if side_cate is not None:
         l_categorie = side_cate.find_all('a')
         for cate in l_categorie:
-            # print(cate.text)
-            data_cate_to_append.append(cate.text.strip())
+            data['category'].append(cate.text.strip())
     else:
         print(side_cate)
         print('None')
 
-    for data in data_cate_to_append:
-        print(data)
+    for d in data['category']:
+        print(d)
     
-    # with csv.open_csv('data.csv') as reader:  # doctest: +SKIP
+    with open('data.csv', 'w') as csvfile:  # doctest: +SKIP
+        dico_data = data
     #     for row in reader:
     #         print(', '.join(row))
 
