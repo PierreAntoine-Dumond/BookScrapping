@@ -5,3 +5,5 @@ testscrapp
 .idea
 data_book.csv
 fonction_extract
+__pycache__/
+mainbis.py
