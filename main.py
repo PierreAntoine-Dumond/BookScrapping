@@ -43,7 +43,7 @@ def read_file(file: str):
 
     data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
             "number_available": [], "product_description": [], "category": [], "review_rating": [], "image_url": []}
-    
+
     print('## -- Lecture du fichier en cours... -- ##')
     with open(file, "r") as f:
         f_content = f.read()
@@ -55,11 +55,12 @@ def read_file(file: str):
 
     l_titre = soup.find_all('h3')
     for t in l_titre:
-        data['title'].append(t.text)
+        data['title'].append(t.text.strip())
 
+    print('TITLE')
     for d in data['title']:
         print(d)
-
+    print()
 
     side_cate = soup.find("div", class_="side_categories")
     if side_cate is not None:
@@ -70,15 +71,22 @@ def read_file(file: str):
         print(side_cate)
         print('None')
 
+    print('CATEGORY')
     for d in data['category']:
         print(d)
-    
-    with open('data.csv', 'w') as csvfile:  # doctest: +SKIP
-        dico_data = data
-    #     for row in reader:
-    #         print(', '.join(row))
+    print()
+
+    with open('data.csv', 'w') as csvfile:
+        dico_data = ["product_page_url","universal_product_code","title","price_including_tax","price_excluding_tax",
+            "number_available","product_description","category","review_rating","image_url"]
+        writer = csv.DictWriter(csvfile, fieldnames=dico_data)
+        writer.writeheader()
+        writer.writerow({"product_page_url":"","universal_product_code":"","title":'A Light in the ...',"price_including_tax":'',"price_excluding_tax":'',
+            "number_available":'',"product_description":'',"category":'Books',"review_rating":'',"image_url":''})
+
 
 # write_file('https://books.toscrape.com/')
         #https://books.toscrape.com/catalogue/page-2.html
-read_file('booktoscrape')
+write_file('https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html')
+# read_file('booktoscrape')
 print('FIN')
