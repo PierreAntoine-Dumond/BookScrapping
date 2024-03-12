@@ -1,11 +1,21 @@
 import csv
 from bs4 import BeautifulSoup
+from main import write_file
 
 
-def read_file(file: str):
+urls = ['https://books.toscrape.com/catalogue/see-america-a-celebration-of-our-national-parks-treasured-sites_732/', 
+       'https://books.toscrape.com/catalogue/full-moon-over-noahs-ark-an-odyssey-to-mount-ararat-and-beyond_811/index.html']
 
-    data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
+
+def get_text_is_not_none(e):
+    if e:
+        return e.text.strip()
+    return None
+
+data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
             "number_available": [], "product_description": [], "category": [], "review_rating": [], "image_url": []}
+
+def read_file(file: str, url):
 
     print('## -- Lecture du fichier en cours... -- ##')
     with open(file, "r") as f:
@@ -16,7 +26,7 @@ def read_file(file: str):
     print()
 
     #Éxtraction des données depuis l'html -> Ajout des éléments à l'intérieur du dictionnaire
-    data['product_page_url'].append('https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html')
+    data['product_page_url'].append(url)
 
 
     print("EXTRACTION HTML TABLE...")
@@ -79,6 +89,8 @@ def read_file(file: str):
     if img_element:
         # Extraire l'URL de l'image
         image_url = img_element['src']
+        char_to_remove = "../.."
+        image_url = image_url.replace(char_to_remove, 'https://books.toscrape.com')
         print("URL de l'image :", image_url)
     else:
         print("Aucun élément <img> trouvé avec l'ID 'product_gallery'\n")
@@ -88,13 +100,47 @@ def read_file(file: str):
     print("RESULTAT EXTRACTION :\n")
     print(data)
 
+    return data
+
+
+# def create_add_or_transform_data_in_csv_file(data):
+#     # Edition et transformation des données dans un fichier csv
+#     print("Transformation des données dans un fichier CSV...")
+#     with open('data_book.csv', 'w') as file:
+#         dico_data = ["product_page_url","universal_product_code","title","price_including_tax","price_excluding_tax",
+#             "number_available","product_description","category","review_rating","image_url"]
+#         writer = csv.DictWriter(file, fieldnames=dico_data)
+#         writer.writeheader()
+#         for row in data:
+#             if isinstance(row, dict):  # Vérification si la ligne est un dictionnaire
+#                 writer.writerow(row)
+#             else:
+#                 print(f"Ignorer la ligne invalide : {row}")
+
+
+def create_add_or_transform_data_in_csv_file(data):
     # Edition et transformation des données dans un fichier csv
     print("Transformation des données dans un fichier CSV...")
-    with open('data_book.csv', 'w') as file:
-        dico_data = ["product_page_url","universal_product_code","title","price_including_tax","price_excluding_tax",
-            "number_available","product_description","category","review_rating","image_url"]
-        writer = csv.DictWriter(file, fieldnames=dico_data)
-        writer.writeheader()
-        writer.writerow(data)
 
-read_file('booktoscrape')
+    # Récupérer les clés du dictionnaire
+    keys = data.keys()
+
+    # Transposer les listes pour obtenir les données par produit
+    product_data = zip(*[data[key] for key in keys])
+    print(product_data)
+    '''
+    with open('data_book.csv', 'w', newline='', encoding='utf-8') as file:
+        # Créer un objet DictWriter avec les clés du dictionnaire
+        writer = csv.DictWriter(file, fieldnames=keys)
+        writer.writeheader()
+
+        # Écrire les données de chaque produit dans le fichier CSV
+        for product in product_data:
+            writer.writerow(dict(zip(keys, product)))
+    '''
+
+for url in urls:
+    write_file(url)
+    read_file('booktoscrape', url)
+print(data)
+create_add_or_transform_data_in_csv_file(data)
