@@ -8,15 +8,6 @@ def get_text_is_not_none(e):
         return e.text.strip()
     return None
 
-# Fonction non fonctionnelle
-def extract(file):
-
-    data = {"product_page_url": "", "universal_product_code": "", "price_including_tax": "", "price_excluding_tax": "",
-            "number_available": "", "product_description": "", "category": "", "review_rating": "", "image_url": ""}
-
-    bs = BeautifulSoup(file, "html5lib")
-    data["title"] = bs.find("h3").text
-    return data
 
 # Envoi d'une requête au fichier à scrapper / Création d'un fichier html / Parsage
 def write_file(url):
@@ -24,7 +15,7 @@ def write_file(url):
     if response.status_code == 200:
         html = response.text
         # Ecriture de la requête html dans un nouveau fichier
-        with open("booktoscrape", "w") as f:
+        with open("booktoscrape", "w", encoding='utf-8') as f:
             f.write(html)
 
         soup = BeautifulSoup(html, 'html5lib')
@@ -32,9 +23,11 @@ def write_file(url):
         # print(titre)
 
         # Récupération des titres h3
+        print("Titre trouvé dans le nouvel URL : \n")
         e_titre = soup.find_all('h3')
         for title in e_titre:
             print(title.text)
+        print()
     else:
         print('ERREUR', response.status_code)
 
@@ -87,6 +80,6 @@ def read_file(file: str):
 
 # write_file('https://books.toscrape.com/')
         #https://books.toscrape.com/catalogue/page-2.html
-write_file('https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html')
+write_file('https://books.toscrape.com/catalogue/see-america-a-celebration-of-our-national-parks-treasured-sites_732/')
 # read_file('booktoscrape')
 print('FIN')
