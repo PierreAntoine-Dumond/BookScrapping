@@ -2,6 +2,10 @@ import csv
 from bs4 import BeautifulSoup
 from main import write_file
 
+## -- Ce scrypt sert à récupérer toutes les données d'une page produit -- ##
+## --                            ET                                    -- ##
+## -- A créer, ajouter ou transformer les données dans un fichier csv  -- ##
+
 
 urls = ['https://books.toscrape.com/catalogue/see-america-a-celebration-of-our-national-parks-treasured-sites_732/', 
        'https://books.toscrape.com/catalogue/full-moon-over-noahs-ark-an-odyssey-to-mount-ararat-and-beyond_811/index.html']
@@ -103,21 +107,6 @@ def read_file(file: str, url):
     return data
 
 
-# def create_add_or_transform_data_in_csv_file(data):
-#     # Edition et transformation des données dans un fichier csv
-#     print("Transformation des données dans un fichier CSV...")
-#     with open('data_book.csv', 'w') as file:
-#         dico_data = ["product_page_url","universal_product_code","title","price_including_tax","price_excluding_tax",
-#             "number_available","product_description","category","review_rating","image_url"]
-#         writer = csv.DictWriter(file, fieldnames=dico_data)
-#         writer.writeheader()
-#         for row in data:
-#             if isinstance(row, dict):  # Vérification si la ligne est un dictionnaire
-#                 writer.writerow(row)
-#             else:
-#                 print(f"Ignorer la ligne invalide : {row}")
-
-
 def create_add_or_transform_data_in_csv_file(data):
     # Edition et transformation des données dans un fichier csv
     print("Transformation des données dans un fichier CSV...")
@@ -128,7 +117,6 @@ def create_add_or_transform_data_in_csv_file(data):
     # Transposer les listes pour obtenir les données par produit
     product_data = zip(*[data[key] for key in keys])
     print(product_data)
-    '''
     with open('data_book.csv', 'w', newline='', encoding='utf-8') as file:
         # Créer un objet DictWriter avec les clés du dictionnaire
         writer = csv.DictWriter(file, fieldnames=keys)
@@ -137,7 +125,6 @@ def create_add_or_transform_data_in_csv_file(data):
         # Écrire les données de chaque produit dans le fichier CSV
         for product in product_data:
             writer.writerow(dict(zip(keys, product)))
-    '''
 
 for url in urls:
     write_file(url)
