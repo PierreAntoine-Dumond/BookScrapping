@@ -1,14 +1,18 @@
 import csv
 from bs4 import BeautifulSoup
 from main import write_file
+from scrapping_one_page_of_book import extract_url
 
 ## -- Ce scrypt sert à récupérer toutes les données d'une page produit -- ##
 ## --                            ET                                    -- ##
 ## -- A créer, ajouter ou transformer les données dans un fichier csv  -- ##
 
 
-urls = ['https://books.toscrape.com/catalogue/see-america-a-celebration-of-our-national-parks-treasured-sites_732/', 
-       'https://books.toscrape.com/catalogue/full-moon-over-noahs-ark-an-odyssey-to-mount-ararat-and-beyond_811/index.html']
+# urls = ['https://books.toscrape.com/catalogue/see-america-a-celebration-of-our-national-parks-treasured-sites_732/', 
+#        'https://books.toscrape.com/catalogue/full-moon-over-noahs-ark-an-odyssey-to-mount-ararat-and-beyond_811/index.html']
+
+
+urls = extract_url('booktoscrape')
 
 
 def get_text_is_not_none(e):
@@ -22,7 +26,7 @@ data = {"product_page_url": [], "universal_product_code": [], "title": [], "pric
 def read_file(file: str, url):
 
     print('## -- Lecture du fichier en cours... -- ##')
-    with open(file, "r") as f:
+    with open(file, "r", encoding='utf-8') as f:
         f_content = f.read()
     print()
     soup = BeautifulSoup(f_content, 'html5lib')
@@ -127,7 +131,7 @@ def create_add_or_transform_data_in_csv_file(data):
             writer.writerow(dict(zip(keys, product)))
 
 for url in urls:
+    print('Scrapping des données en cours... ' + url)
     write_file(url)
     read_file('booktoscrape', url)
-print(data)
 create_add_or_transform_data_in_csv_file(data)

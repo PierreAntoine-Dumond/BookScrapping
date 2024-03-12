@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from main import write_file
 
+## -- Ce scrypt sert à récupérer toutes les urls d'une page catégorie séléctionnée -- ##
 
 def extract_url(file):
 
@@ -17,6 +18,7 @@ def extract_url(file):
         url = url.replace('../../..', 'https://books.toscrape.com/catalogue')
         urls.append(url)
     print(urls)
+    return urls
 
 
 write_file('https://books.toscrape.com/catalogue/category/books/travel_2/index.html')
