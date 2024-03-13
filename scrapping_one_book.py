@@ -1,18 +1,10 @@
 import csv
+import requests
 from bs4 import BeautifulSoup
-from main import write_file
-from scrapping_one_page_of_book import extract_url
 
 ## -- Ce scrypt sert à récupérer toutes les données d'une page produit -- ##
 ## --                            ET                                    -- ##
 ## -- A créer, ajouter ou transformer les données dans un fichier csv  -- ##
-
-
-# urls = ['https://books.toscrape.com/catalogue/see-america-a-celebration-of-our-national-parks-treasured-sites_732/', 
-#        'https://books.toscrape.com/catalogue/full-moon-over-noahs-ark-an-odyssey-to-mount-ararat-and-beyond_811/index.html']
-
-
-urls = extract_url('booktoscrape')
 
 
 def get_text_is_not_none(e):
@@ -22,6 +14,29 @@ def get_text_is_not_none(e):
 
 data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
             "number_available": [], "product_description": [], "category": [], "review_rating": [], "image_url": []}
+
+def write_file(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        html = response.text
+        # Ecriture de la requête html dans un nouveau fichier
+        with open("booktoscrape", "w", encoding='utf-8') as f:
+            f.write(html)
+
+        soup = BeautifulSoup(html, 'html5lib')
+        # titre = get_text_is_not_none(soup.find("div", class_="product_price"))
+        # print(titre)
+
+        # Récupération des titres h3
+        print("Titre trouvé dans le nouvel URL : \n")
+        e_titre = soup.find_all('h3')
+        for title in e_titre:
+            print(title.text)
+        print()
+    else:
+        print('ERREUR', response.status_code)
+
+
 
 def read_file(file: str, url):
 
@@ -110,6 +125,25 @@ def read_file(file: str, url):
 
     return data
 
+def extract_url(file):
+
+    urls = []
+    print('## -- Lecture du fichier en cours... -- ##')
+    with open(file, "r") as f:
+        f_content = f.read()
+    soup = BeautifulSoup(f_content, "html5lib")
+
+    scrap_url_ol = soup.find("ol", class_='row')
+    scrap_url_href = scrap_url_ol.find_all('a', href=True)
+    for url in scrap_url_href[::2]:
+        url = url.get('href')
+        print(url)
+        url = url.replace('../../..', 'https://books.toscrape.com/catalogue')
+        print(url)
+        urls.append(url)
+    print(urls)
+    return urls
+
 
 def create_add_or_transform_data_in_csv_file(data):
     # Edition et transformation des données dans un fichier csv
@@ -130,8 +164,13 @@ def create_add_or_transform_data_in_csv_file(data):
         for product in product_data:
             writer.writerow(dict(zip(keys, product)))
 
+
+write_file('https://books.toscrape.com/catalogue/category/books/fantasy_19/index.html')
+urls = extract_url('booktoscrape')
+
 for url in urls:
     print('Scrapping des données en cours... ' + url)
     write_file(url)
     read_file('booktoscrape', url)
 create_add_or_transform_data_in_csv_file(data)
+print('FIN')
