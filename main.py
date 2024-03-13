@@ -1,5 +1,6 @@
 import csv
 import requests
+import time
 from bs4 import BeautifulSoup
 
 ## -- Ce scrypt sert à récupérer toutes les données d'une page produit -- ##
@@ -15,6 +16,7 @@ def get_text_is_not_none(e):
 data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
             "number_available": [], "product_description": [], "category": [], "review_rating": [], "image_url": []}
 
+# Cette fonction écrit ou réecrit à l'intérieur du fichier <booktoscrape> -> Le crée si inexistant dans le dossier courant
 def write_file(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -36,8 +38,7 @@ def write_file(url):
     else:
         print('ERREUR', response.status_code)
 
-
-
+# Cette fonction lit le fichier -> elle est conçue pour extraire toutes les informations de la fiche produit
 def read_file(file: str, url):
 
     print('## -- Lecture du fichier en cours... -- ##')
@@ -93,6 +94,7 @@ def read_file(file: str, url):
 
     print("EXTRACTION CATEGORY...")
     # Ici, lors de la mise en place du code j'ai utilisé une variable i que j'ai indenté pour savoir ou se situaait la bonne catégorie.
+    # Il faut l'utiliser qu'une fois après avoir chargé l'intégralité des urls des fiches produits
     data_cate = []
     category_data_ul = soup.find('ul')
     if category_data_ul:
@@ -125,9 +127,10 @@ def read_file(file: str, url):
 
     return data
 
-def extract_url(file):
+# Cette fonction récupère les urls à l'intérieur d'une catégorie et remplace les caractères pour obtenir un lien opérationnel.
+def extract_url(file, urls):
 
-    urls = []
+    path_url_to_extract = 'https://books.toscrape.com/catalogue/'
     print('## -- Lecture du fichier en cours... -- ##')
     with open(file, "r") as f:
         f_content = f.read()
@@ -138,12 +141,60 @@ def extract_url(file):
     for url in scrap_url_href[::2]:
         url = url.get('href')
         print(url)
-        url = url.replace('../../..', 'https://books.toscrape.com/catalogue')
+        url = url.replace('../../..', path_url_to_extract)
         print(url)
         urls.append(url)
     print(urls)
-    return urls
 
+    return
+
+# Cette fonction regarde si une page suivante est existante à la catégorie. 
+def try_to_find_pages(file, url_present_page, l_url_page):
+
+    print('JE CHERCHE LE NOMBRE DE PAGE A SCRAPPER DANS CETTE CATÉGORIE !')
+    first_time = True
+    next_page = True
+    i = 1
+    i2 = 2
+    while next_page:
+        with open(file, "r") as f:
+            f_content = f.read()
+        soup = BeautifulSoup(f_content, "html5lib")
+        try:
+            print("Une seconde, je vérifie si une page suivante est existante dans cette catégorie...")
+            scrap_url_pager = soup.find("li", class_='next')
+            if scrap_url_pager and first_time == True:
+                print('On dirait qu\'une seconde page eut été découverte.')
+                time.sleep(1)
+                scrap_url_next_href = scrap_url_pager.find('a', href=True)
+                url_scrap_next = scrap_url_next_href.get('href')
+                url_next = url_present_page.replace('index.html', url_scrap_next)
+                print(url_next)
+                l_url_page.append(url_next)
+                write_file(url_next)
+                url_scrap_last = url_scrap_next
+                print("Je suis l'url scrap_last : ",url_scrap_last)
+            elif scrap_url_pager:
+                first_time = False
+                scrap_url_next_href = scrap_url_pager.find('a', href=True)
+                url_scrap_next = scrap_url_next_href.get('href')
+                print("On dirait qu'il existe plusieurs pages. Laisse moi récupérer ses urls !")
+                time.sleep(1)
+                print(url_present_page)
+                url_next = url_present_page.replace(url_scrap_last, url_scrap_next)
+                print(url_next)
+                l_url_page.append(url_next)
+                write_file(url_next)
+                url_scrap_last = url_next
+            else:
+                print('J\'ai terminé d\'avaler les urls ! Plus aucune page dans cette catégorie.. C\'était.. Délicieux !')
+                del l_url_page[-1]
+                next_page = False
+        except:
+            print("Intéréssant, je n'ai pas trouvé de balise <a href> dans cette catégorie..")
+
+    return l_url_page.append(url_next)
+    
 
 def create_add_or_transform_data_in_csv_file(data):
     # Edition et transformation des données dans un fichier csv
@@ -164,13 +215,19 @@ def create_add_or_transform_data_in_csv_file(data):
         for product in product_data:
             writer.writerow(dict(zip(keys, product)))
 
-
-write_file('https://books.toscrape.com/catalogue/category/books/fantasy_19/index.html')
-urls = extract_url('booktoscrape')
+urls = []
+url_page = ['https://books.toscrape.com/catalogue/category/books/fantasy_19/index.html']
+write_file(url_page[0])
+try_to_find_pages('booktoscrape',url_page[0], url_page)
+for u in url_page:
+    print('Page suivante : ', u)
+    write_file(u)
+    extract_url('booktoscrape', urls)
 
 for url in urls:
     print('Scrapping des données en cours... ' + url)
     write_file(url)
     read_file('booktoscrape', url)
+    print(data)
 create_add_or_transform_data_in_csv_file(data)
 print('FIN')
