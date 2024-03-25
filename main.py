@@ -7,10 +7,75 @@ from bs4 import BeautifulSoup
 ## --                            ET                                    -- ##
 ## -- A créer, ajouter ou transformer les données dans un fichier csv  -- ##
 
+def recup_all_categorie(url):
+
+    response = requests.get(url)
+    if response.status_code == 200:
+        html = response.text
+
+        with open("booktoscrape", "w", encoding='utf-8') as f:
+            f.write(html)
+
+        soup = BeautifulSoup(html, 'html5lib')
+
+        print('Liste catéogrie trouver dans booktoscrape :')
+        l_url = []
+        start_url_to_add = 'https://books.toscrape.com/'
+        side = soup.find('ul', class_='nav nav-list')
+        print(side.text)
+        all_a = side.find_all('a', href=True)
+        for a in all_a[1::]:
+            url_a = a.get('href')
+            add_http_url_a = start_url_to_add + url_a
+            print(add_http_url_a)
+            l_url.append(add_http_url_a)
+        return l_url
+    else:
+        print('ERREUR code status')
+
+
+
+# Cette fonction regarde si une page suivante est existante à la catégorie. 
+def try_to_find_pages(urls):
+
+    l_urls = []
+    print('JE CHERCHE LE NOMBRE DE PAGE A SCRAPPER DANS CETTE CATÉGORIE !')
+
+    for url in urls:
+        for i in range(2, 51):
+            if i == 2:
+                url = url.replace('index.html', f'page-{i}.html')
+                response = requests.get(url)
+                if response.status_code == 200:
+                    l_urls.append(url)
+                    print('Une nouvelle page a été trouvée.. Récupération de l\'URL...')
+                else:
+                    print('Fin des pages dans cette catégorie !')
+                    break
+            else:
+                url = url.replace(f'page-{i-1}.html', f'page-{i}.html')
+                response = requests.get(url)
+                if response.status_code == 200:
+                    l_urls.append(url)
+                    print('Une nouvelle page a été trouvée.. Récupération de l\'URL...')
+                else:
+                    print('Fin des pages dans cette catégorie !')
+                    break
+            
+    print(l_urls)
+    return l_urls
+
 
 def get_text_is_not_none(e):
     if e:
         return e.text.strip()
+    return None
+
+
+def search__element_or_return_none(search_element):
+    '''Cette fonction est utilisé pour voir si un élément a été trouvé avec BeautifulSoup'''
+    if search_element:
+        return search_element
     return None
 
 data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
@@ -39,7 +104,7 @@ def write_file(url):
         print('ERREUR', response.status_code)
 
 # Cette fonction lit le fichier -> elle est conçue pour extraire toutes les informations de la fiche produit
-def read_file(file: str, url):
+def extract_product(file: str, url):
 
     print('## -- Lecture du fichier en cours... -- ##')
     with open(file, "r", encoding='utf-8') as f:
@@ -79,7 +144,7 @@ def read_file(file: str, url):
 
 
     print("EXTRACTION DESCRIPTION...")
-    # Ici, lors de la mise en place du code j'ai utilisé une variable i que j'ai indenté pour savoir ou se situaait la bonne description.
+    # Ici, lors de la mise en place du code j'ai utilisé une variable i que j'ai indenté pour savoir ou se situait la bonne description.
     data_p = []
     descritpion = soup.find_all("p")
     if descritpion:
@@ -93,7 +158,7 @@ def read_file(file: str, url):
 
 
     print("EXTRACTION CATEGORY...")
-    # Ici, lors de la mise en place du code j'ai utilisé une variable i que j'ai indenté pour savoir ou se situaait la bonne catégorie.
+    # Ici, lors de la mise en place du code j'ai utilisé une variable i que j'ai indenté pour savoir ou se situait la bonne catégorie.
     # Il faut l'utiliser qu'une fois après avoir chargé l'intégralité des urls des fiches produits
     data_cate = []
     category_data_ul = soup.find('ul')
@@ -130,10 +195,12 @@ def read_file(file: str, url):
 # Cette fonction récupère les urls à l'intérieur d'une catégorie et remplace les caractères pour obtenir un lien opérationnel.
 def extract_url(file, urls):
 
+    print(urls)
     path_url_to_extract = 'https://books.toscrape.com/catalogue/'
     print('## -- Lecture du fichier en cours... -- ##')
-    with open(file, "r") as f:
+    with open(file, "r", encoding="utf8") as f:
         f_content = f.read()
+        print('Lecture F.read qui bug : ', f_content)
     soup = BeautifulSoup(f_content, "html5lib")
 
     scrap_url_ol = soup.find("ol", class_='row')
@@ -144,57 +211,9 @@ def extract_url(file, urls):
         url = url.replace('../../..', path_url_to_extract)
         print(url)
         urls.append(url)
-    print(urls)
 
-    return
+    return urls
 
-# Cette fonction regarde si une page suivante est existante à la catégorie. 
-def try_to_find_pages(file, url_present_page, l_url_page):
-
-    print('JE CHERCHE LE NOMBRE DE PAGE A SCRAPPER DANS CETTE CATÉGORIE !')
-    first_time = True
-    next_page = True
-    i = 1
-    i2 = 2
-    while next_page:
-        with open(file, "r") as f:
-            f_content = f.read()
-        soup = BeautifulSoup(f_content, "html5lib")
-        try:
-            print("Une seconde, je vérifie si une page suivante est existante dans cette catégorie...")
-            scrap_url_pager = soup.find("li", class_='next')
-            if scrap_url_pager and first_time == True:
-                print('On dirait qu\'une seconde page eut été découverte.')
-                time.sleep(1)
-                scrap_url_next_href = scrap_url_pager.find('a', href=True)
-                url_scrap_next = scrap_url_next_href.get('href')
-                url_next = url_present_page.replace('index.html', url_scrap_next)
-                print(url_next)
-                l_url_page.append(url_next)
-                write_file(url_next)
-                url_scrap_last = url_scrap_next
-                print("Je suis l'url scrap_last : ",url_scrap_last)
-            elif scrap_url_pager:
-                first_time = False
-                scrap_url_next_href = scrap_url_pager.find('a', href=True)
-                url_scrap_next = scrap_url_next_href.get('href')
-                print("On dirait qu'il existe plusieurs pages. Laisse moi récupérer ses urls !")
-                time.sleep(1)
-                print(url_present_page)
-                url_next = url_present_page.replace(url_scrap_last, url_scrap_next)
-                print(url_next)
-                l_url_page.append(url_next)
-                write_file(url_next)
-                url_scrap_last = url_next
-            else:
-                print('J\'ai terminé d\'avaler les urls ! Plus aucune page dans cette catégorie.. C\'était.. Délicieux !')
-                del l_url_page[-1]
-                next_page = False
-        except:
-            print("Intéréssant, je n'ai pas trouvé de balise <a href> dans cette catégorie..")
-
-    return l_url_page.append(url_next)
-    
 
 def create_add_or_transform_data_in_csv_file(data):
     # Edition et transformation des données dans un fichier csv
@@ -215,19 +234,39 @@ def create_add_or_transform_data_in_csv_file(data):
         for product in product_data:
             writer.writerow(dict(zip(keys, product)))
 
-urls = []
-url_page = ['https://books.toscrape.com/catalogue/category/books/fantasy_19/index.html']
-write_file(url_page[0])
-try_to_find_pages('booktoscrape',url_page[0], url_page)
-for u in url_page:
-    print('Page suivante : ', u)
-    write_file(u)
-    extract_url('booktoscrape', urls)
 
+# Faire une fonction
+url_home = 'https://books.toscrape.com/index.html'
+urls = []
+
+write_file(url_home)
+
+urls = recup_all_categorie(url_home)
 for url in urls:
-    print('Scrapping des données en cours... ' + url)
-    write_file(url)
-    read_file('booktoscrape', url)
-    print(data)
+    print(url)
+
+urls = urls + try_to_find_pages(urls)
+list.sort(urls)
+print(urls)
+time.sleep(3)
+print()
+print(f'Scrapping des données en cours... {url}/n')
+print()
+
+for u in urls:
+    print('Page suivante : ', u)
+    print()
+    print('Écriture du fichier...')
+    write_file(u)
+    data = extract_url('booktoscrape', urls)
+    print('data : ', data)
+
+print('Extraction des données...')
+for u2 in data:
+    extract_product('booktoscrape', u2)
+print()
+
+print('création finale du fichier csv')
 create_add_or_transform_data_in_csv_file(data)
+
 print('FIN')
