@@ -78,8 +78,6 @@ def search__element_or_return_none(search_element):
         return search_element
     return None
 
-data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
-            "number_available": [], "product_description": [], "category": [], "review_rating": [], "image_url": []}
 
 # Cette fonction écrit ou réecrit à l'intérieur du fichier <booktoscrape> -> Le crée si inexistant dans le dossier courant
 def write_file(url):
@@ -102,6 +100,7 @@ def write_file(url):
         print()
     else:
         print('ERREUR', response.status_code)
+
 
 # Cette fonction lit le fichier -> elle est conçue pour extraire toutes les informations de la fiche produit
 def extract_product(file: str, url):
@@ -159,7 +158,6 @@ def extract_product(file: str, url):
 
     print("EXTRACTION CATEGORY...")
     # Ici, lors de la mise en place du code j'ai utilisé une variable i que j'ai indenté pour savoir ou se situait la bonne catégorie.
-    # Il faut l'utiliser qu'une fois après avoir chargé l'intégralité des urls des fiches produits
     data_cate = []
     category_data_ul = soup.find('ul')
     if category_data_ul:
@@ -192,24 +190,32 @@ def extract_product(file: str, url):
 
     return data
 
-# Cette fonction récupère les urls à l'intérieur d'une catégorie et remplace les caractères pour obtenir un lien opérationnel.
-def extract_url(file, urls):
 
-    path_url_to_extract = 'https://books.toscrape.com/catalogue/'
+# Cette fonction récupère les urls à l'intérieur d'une catégorie et remplace les caractères pour obtenir un lien opérationnel.
+def extract_url(file):
+
+    urls_failed = []
+    urls_final = []
+    path_url_to_extract = 'https://books.toscrape.com/catalogue'
     print('## -- Lecture du fichier en cours... -- ##')
     with open(file, "r", encoding="utf8") as f:
         f_content = f.read()
     soup = BeautifulSoup(f_content, "html5lib")
 
-    scrap_url_ol = soup.find("ol", class_='row')
-    scrap_url_href = scrap_url_ol.find_all('a', href=True)
-    for url in scrap_url_href[::2]:
-        url = url.get('href')
-        print(url)
-        url = url.replace('../../..', path_url_to_extract)
-        print(url)
-        urls.append(url)
-    return urls
+    scrap_url = soup.find("ol", class_='row')
+    try: 
+        scrap_url_href = scrap_url.find_all('a', href=True)
+        for url in scrap_url_href[::2]:
+            url = url.get('href')
+            print(url)
+            url = url.replace('../../..', path_url_to_extract)
+            print(url)
+            urls_final.append(url)
+    except:
+        print('Cette cette page a rencontré un problème.')
+        urls_failed.append(scrap_url)
+        pass
+    return urls_final, urls_failed
 
 
 def create_add_or_transform_data_in_csv_file(data):
@@ -232,32 +238,62 @@ def create_add_or_transform_data_in_csv_file(data):
             writer.writerow(dict(zip(keys, product)))
 
 
-# Faire une fonction
-url_home = 'https://books.toscrape.com/index.html'
 urls = []
+data = {"product_page_url": [], "universal_product_code": [], "title": [], "price_including_tax": [], "price_excluding_tax": [],
+            "number_available": [], "product_description": [], "category": [], "review_rating": [], "image_url": []}
 
-write_file(url_home)
+# Exécution du programme
+def recuperation_all_url_categorie(url_home):
 
-urls = recup_all_categorie(url_home)
-urls = urls + try_to_find_pages(urls)
-list.sort(urls)
-print(urls)
-time.sleep(5)
-print(f'\nScrapping des données en cours...\n')
+    write_file(url_home)
+    urls = recup_all_categorie(url_home)
+    urls = urls + try_to_find_pages(urls)
+    list.sort(urls)
+    print(urls)
+    time.sleep(5)
+    return urls
 
-for u in urls:
-    print('Page suivante : ', u, '\n')
-    print('Écriture du fichier...')
-    write_file(u)
-    print('Extraction de l\'URL de la fiche produit !')
-    data = extract_url('booktoscrape', urls)
 
-print('Extraction des données...')
-for u2 in data:
-    print(u2)
-    extract_product('booktoscrape', u2)
+def recuperation_product_last_url(urls):
 
-print('\ncréation finale du fichier csv')
-create_add_or_transform_data_in_csv_file(data)
+    l_data = []
+    datagood = []
+    datafailed = []
+    print(f'\nScrapping des données en cours...\n')
+    i = 0
+    for u in urls:
+        i += 1
+        print(f'\nPage suivante : {u} --> {i} sur {len(urls)}\n')
+        print('Écriture du fichier...')
+        write_file(u)
+        print('\nExtraction de l\'URL de la fiche produit...')
+        data_extract1, data_extract2 = extract_url('booktoscrape')
+        datagood.append(data_extract1)
+        datafailed.append(data_extract2)
+        print('\nL\'URL de la fiche produit a été extrait !\n')
+    l_data.append(datagood)
+    l_data.append(datafailed)
+
+    return l_data
+
+
+def extraction_produit(l_data_last_url):
+
+    i = 0
+    print('Je commence l\'extraction des données des fiches produits...')
+    for url in l_data_last_url[0]:
+        i += 1
+        print(f'URL n°{i} / {len(l_data_last_url)}')
+        write_file(url)
+        extract_product('booktoscrape', url)
+
+recup1 = recuperation_all_url_categorie('https://books.toscrape.com/index.html')
+recup2 = recuperation_product_last_url(recup1)
+print(recup2[0], 'Liste url des fiches produits.')
+extract = extraction_produit(recup2)
+
+print(f'Liste des URLS ou le scrapping n\'a pas réussis\n{recup2[1]}')
+print('\nCréation finale du fichier csv')
+# create_add_or_transform_data_in_csv_file(data)
 
 print('FIN')
