@@ -195,12 +195,10 @@ def extract_product(file: str, url):
 # Cette fonction récupère les urls à l'intérieur d'une catégorie et remplace les caractères pour obtenir un lien opérationnel.
 def extract_url(file, urls):
 
-    print(urls)
     path_url_to_extract = 'https://books.toscrape.com/catalogue/'
     print('## -- Lecture du fichier en cours... -- ##')
     with open(file, "r", encoding="utf8") as f:
         f_content = f.read()
-        print('Lecture F.read qui bug : ', f_content)
     soup = BeautifulSoup(f_content, "html5lib")
 
     scrap_url_ol = soup.find("ol", class_='row')
@@ -211,7 +209,6 @@ def extract_url(file, urls):
         url = url.replace('../../..', path_url_to_extract)
         print(url)
         urls.append(url)
-
     return urls
 
 
@@ -242,31 +239,25 @@ urls = []
 write_file(url_home)
 
 urls = recup_all_categorie(url_home)
-for url in urls:
-    print(url)
-
 urls = urls + try_to_find_pages(urls)
 list.sort(urls)
 print(urls)
-time.sleep(3)
-print()
-print(f'Scrapping des données en cours... {url}/n')
-print()
+time.sleep(5)
+print(f'\nScrapping des données en cours...\n')
 
 for u in urls:
-    print('Page suivante : ', u)
-    print()
+    print('Page suivante : ', u, '\n')
     print('Écriture du fichier...')
     write_file(u)
+    print('Extraction de l\'URL de la fiche produit !')
     data = extract_url('booktoscrape', urls)
-    print('data : ', data)
 
 print('Extraction des données...')
 for u2 in data:
+    print(u2)
     extract_product('booktoscrape', u2)
-print()
 
-print('création finale du fichier csv')
+print('\ncréation finale du fichier csv')
 create_add_or_transform_data_in_csv_file(data)
 
 print('FIN')
