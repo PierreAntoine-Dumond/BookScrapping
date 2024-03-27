@@ -203,7 +203,7 @@ def extract_url(file):
     soup = BeautifulSoup(f_content, "html5lib")
 
     scrap_url = soup.find("ol", class_='row')
-    try: 
+    try:
         scrap_url_href = scrap_url.find_all('a', href=True)
         for url in scrap_url_href[::2]:
             url = url.get('href')
@@ -283,17 +283,18 @@ def extraction_produit(l_data_last_url):
     print('Je commence l\'extraction des données des fiches produits...')
     for url in l_data_last_url[0]:
         i += 1
-        print(f'URL n°{i} / {len(l_data_last_url)}')
+        print(f'URL n°{i} / {len(l_data_last_url[0])}')
+        print('Nom de l\'url de la fiche produit :', url)
         write_file(url)
         extract_product('booktoscrape', url)
 
 recup1 = recuperation_all_url_categorie('https://books.toscrape.com/index.html')
 recup2 = recuperation_product_last_url(recup1)
-print(recup2[0], 'Liste url des fiches produits.')
+print(recup2[0], '\nListe url des fiches produits.')
 extract = extraction_produit(recup2)
 
-print(f'Liste des URLS ou le scrapping n\'a pas réussis\n{recup2[1]}')
+print(f'\n\nListe des URLS ou le scrapping n\'a pas réussis\n{recup2[1]}')
 print('\nCréation finale du fichier csv')
-# create_add_or_transform_data_in_csv_file(data)
+create_add_or_transform_data_in_csv_file(data)
 
 print('FIN')
