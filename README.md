@@ -1,4 +1,4 @@
-# OC-PythonP2
+# BookScrapping
 
 Ce programme est conçu pour extraire différentes informations de la page produit de chaque livre du site booktoscrape.
 
