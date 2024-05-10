@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
+import main
 import time
-url_home = 'https://books.toscrape.com/index.html'
+
 
 def recup_all_categorie(url):
 
@@ -29,7 +30,22 @@ def recup_all_categorie(url):
         print('ERREUR code status')
     return l_url
 
-urls = []
-recup_all_categorie(url_home)
-for url in urls:
-    print(url)
+
+# Cette fonction regarde si une page suivante est existante à la catégorie. 
+def try_to_find_pages(urls):
+
+    print('JE CHERCHE LE NOMBRE DE PAGE A SCRAPPER DANS CETTE CATÉGORIE !')
+    
+    i = 1
+    for url in urls:
+        for i in range(50):
+            i += 1
+            url = url.replace('index.html', f'page{i}')
+            print(url)
+            try:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    urls.insert(url)
+            except:
+                print("Erreur status code")
+    return urls
